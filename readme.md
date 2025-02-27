@@ -1,1 +1,2 @@
 # cli rag project
+high there this is my github setting up a cli rag system the purpose of this is to be able to reference the information base of an ai system and tailor responses based on a specific information base. also pracitcing things like git commands, reasoning about a program and using python since ive previously only worked w node. yay new things 
