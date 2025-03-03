@@ -43,20 +43,20 @@
 
 import argparse
 
-# trying to write a function to handle user queries but idk if this is right
 def process_input():
-    parser = argparse.ArgumentParser(description="moonlite systems cli")
-    parser.add_argument("--query", "-q", type=str, help="enter query")
+    parser = argparse.ArgumentParser(description="Moonlite Systems CLI")
+    parser.add_argument("--query", "-q", type=str, help="Enter query")
     args = parser.parse_args()
 
-    cleaned_input == args.query.strip().lower() if args.query else None
+    cleaned_input = args.query.strip().lower() if args.query else None
 
     if cleaned_input == "exit":
-        print("exiting...")
+        print("Exiting...")
         return None
+
     return cleaned_input
 
-    __name__== "__main__":
-    print(process_input())
-
-# here i am taking arrrrrrghs 
+if __name__ == "__main__":
+    user_query = process_input()
+    if user_query:
+        print(f"Received query: {user_query}")
