@@ -154,24 +154,33 @@ def add_to_db(text):
     print(f"✅ Added to database: {text}")
 
 def search_db(query, top_k=3):
-    """Search FAISS for the most similar results and return unique text matches."""
+    """Search FAISS for the most similar results and return unique text matches with normalized scores."""
     query_vector = np.array([embed_text(query)], dtype="float32").reshape(1, -1)
     distances, indices = index.search(query_vector, top_k)
 
-    # Use a set to store unique results
+    # Use a dictionary to store unique results
     unique_results = {}
-    
+
+    # Normalize scores (convert FAISS distance into similarity score)
+    min_dist, max_dist = min(distances[0]), max(distances[0]) if distances[0].size > 0 else (0, 1)
+
+    # Handle case where min_dist == max_dist (prevents all scores from being 1.0 or 0.0)
+    if max_dist - min_dist < 1e-9:
+        min_dist -= 1  # Shift min slightly so normalization works
+
     for i, dist in zip(indices[0], distances[0]):
-        if i < len(text_data) and dist < 1e+10:  # Ignore invalid FAISS results
+        if i < len(text_data):
             text_entry = text_data[i]
-            if text_entry not in unique_results:  # Only add unique entries
-                unique_results[text_entry] = dist
+            normalized_score = 1 - ((dist - min_dist) / (max_dist - min_dist + 1e-9))  # Avoid division by zero
+            normalized_score = max(0.01, normalized_score)  # Ensure no score is exactly 0.0000
+            if text_entry not in unique_results:  # Prevent duplicate entries
+                unique_results[text_entry] = normalized_score
 
-    # Convert back to list for proper output formatting
-    sorted_results = sorted(unique_results.items(), key=lambda x: x[1])  # Sort by distance
-    final_texts, final_distances = zip(*sorted_results) if sorted_results else ([], [])
+    # Sort by highest similarity score
+    sorted_results = sorted(unique_results.items(), key=lambda x: x[1], reverse=True)
+    final_texts, final_scores = zip(*sorted_results) if sorted_results else ([], [])
 
-    return final_texts, final_distances
+    return final_texts, final_scores
 
 def extract_text_from_pdf(pdf_path):
     """Extract text from a PDF file."""
