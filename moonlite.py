@@ -42,8 +42,19 @@
 # user inputs query, 
 
 import argparse
+import faiss
+import numpy as np
+from sentence_transformers import SentenceTransformer
+
+# Load embedding model
+model = SentenceTransformer("all-MiniLM-L6-v2")
+
+# Initialize FAISS vector store
+dim = 384  # Vector size for MiniLM
+index = faiss.IndexFlatL2(dim)
 
 def process_input():
+    """Handles CLI input"""
     parser = argparse.ArgumentParser(description="Moonlite Systems CLI")
     parser.add_argument("--query", "-q", type=str, help="Enter query")
     args = parser.parse_args()
@@ -56,7 +67,28 @@ def process_input():
 
     return cleaned_input
 
+def embed_text(text):
+    """Convert text into a vector embedding."""
+    return model.encode([text])[0]
+
+def add_to_db(text):
+    """Convert text to vector and add it to the FAISS database."""
+    vector = np.array([embed_text(text)], dtype="float32")
+    index.add(vector)
+    print(f"Added to database: {text}")
+
+def search_db(query, top_k=3):
+    """Search the FAISS database for similar results."""
+    query_vector = np.array([embed_text(query)], dtype="float32")
+    distances, indices = index.search(query_vector, top_k)
+    return indices, distances
+
 if __name__ == "__main__":
     user_query = process_input()
     if user_query:
-        print(f"Received query: {user_query}")
+        if user_query.lower() == "search":
+            query_text = input("Enter search query: ")
+            results = search_db(query_text)
+            print("Search Results:", results)
+        else:
+            add_to_db(user_query)  # ✅ Ensure this function exists
