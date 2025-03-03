@@ -97,6 +97,7 @@ import argparse
 import faiss
 import numpy as np
 import os
+import fitz  # PyMuPDF
 from sentence_transformers import SentenceTransformer
 
 # Initialize embedding model
@@ -141,7 +142,7 @@ def embed_text(text):
     return model.encode([text])[0]
 
 def add_to_db(text):
-    """Convert text to vector and add it to FAISS, ensuring no duplicates."""
+    """Convert text to vector and add it to FAISS."""
     if text in text_data:
         print(f"⚠️ Duplicate entry detected: \"{text}\". Skipping...")
         return
@@ -152,13 +153,9 @@ def add_to_db(text):
     save_data()  # Save after adding
     print(f"✅ Added to database: {text}")
 
-
 def search_db(query, top_k=3):
     """Search FAISS for the most similar results and return unique text matches."""
     query_vector = np.array([embed_text(query)], dtype="float32").reshape(1, -1)
-
-    print(f"🔍 Query vector shape: {query_vector.shape}")  # Debugging print
-
     distances, indices = index.search(query_vector, top_k)
 
     # Use a set to store unique results
@@ -176,12 +173,32 @@ def search_db(query, top_k=3):
 
     return final_texts, final_distances
 
+def extract_text_from_pdf(pdf_path):
+    """Extract text from a PDF file."""
+    doc = fitz.open(pdf_path)
+    text = "\n".join([page.get_text("text") for page in doc])
+    return text.strip()
+
+def chunk_text(text, chunk_size=500):
+    """Split large text into smaller chunks to store in FAISS."""
+    words = text.split()
+    return [" ".join(words[i:i+chunk_size]) for i in range(0, len(words), chunk_size)]
+
+def process_pdf(pdf_path):
+    """Extract and add PDF text chunks to FAISS."""
+    text = extract_text_from_pdf(pdf_path)
+    chunks = chunk_text(text)
+    print(f"📄 Extracted {len(chunks)} chunks from {pdf_path}")
+    
+    for chunk in chunks:
+        add_to_db(chunk)
 
 def process_input():
     """Handles CLI input."""
     parser = argparse.ArgumentParser(description="Moonlite Systems CLI")
     parser.add_argument("--query", "-q", type=str, help="Enter query")
     parser.add_argument("--add", "-a", type=str, help="Add text to FAISS")
+    parser.add_argument("--pdf", "-p", type=str, help="Add PDF text to FAISS")  # Ensure this line is here
     
     return parser.parse_args()
 
@@ -192,10 +209,12 @@ if __name__ == "__main__":
 
     if args.add:
         add_to_db(args.add)
+    elif args.pdf:
+        process_pdf(args.pdf)
     elif args.query:
         results, distances = search_db(args.query)
         print(f"🔎 Search results:")
         for i, (result, dist) in enumerate(zip(results, distances)):
             print(f"{i+1}. {result} (Score: {dist:.4f})")
     else:
-        print("Please provide either --add or --query.")
+        print("Please provide either --add, --query, or --pdf.")
