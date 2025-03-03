@@ -154,23 +154,28 @@ def add_to_db(text):
 
 
 def search_db(query, top_k=3):
-    """Search FAISS for the most similar results and return actual text."""
+    """Search FAISS for the most similar results and return unique text matches."""
     query_vector = np.array([embed_text(query)], dtype="float32").reshape(1, -1)
 
     print(f"🔍 Query vector shape: {query_vector.shape}")  # Debugging print
 
     distances, indices = index.search(query_vector, top_k)
 
-    # Filter out invalid FAISS results (FAISS default uninitialized value)
-    valid_results = []
-    valid_distances = []
-
+    # Use a set to store unique results
+    unique_results = {}
+    
     for i, dist in zip(indices[0], distances[0]):
-        if i < len(text_data) and dist < 1e+10:  # Filter out extremely large FAISS distances
-            valid_results.append(text_data[i])
-            valid_distances.append(dist)
+        if i < len(text_data) and dist < 1e+10:  # Ignore invalid FAISS results
+            text_entry = text_data[i]
+            if text_entry not in unique_results:  # Only add unique entries
+                unique_results[text_entry] = dist
 
-    return valid_results, valid_distances
+    # Convert back to list for proper output formatting
+    sorted_results = sorted(unique_results.items(), key=lambda x: x[1])  # Sort by distance
+    final_texts, final_distances = zip(*sorted_results) if sorted_results else ([], [])
+
+    return final_texts, final_distances
+
 
 def process_input():
     """Handles CLI input."""
