@@ -188,10 +188,36 @@ def extract_text_from_pdf(pdf_path):
     text = "\n".join([page.get_text("text") for page in doc])
     return text.strip()
 
-def chunk_text(text, chunk_size=500):
-    """Split large text into smaller chunks to store in FAISS."""
-    words = text.split()
-    return [" ".join(words[i:i+chunk_size]) for i in range(0, len(words), chunk_size)]
+import re
+
+def chunk_text(text, max_chunk_size=500):
+    """Splits text into paragraph-based chunks while preserving readability."""
+    paragraphs = text.split("\n")  # Split on newlines
+    chunks = []
+    current_chunk = []
+    current_length = 0
+
+    print(f"🔍 Debug: Extracted {len(paragraphs)} paragraphs from PDF")  # Debug print
+
+    for para in paragraphs:
+        para = para.strip()
+        if not para:
+            continue  # Skip empty lines
+
+        # Check if adding this paragraph exceeds chunk size
+        if current_length + len(para) > max_chunk_size:
+            chunks.append(" ".join(current_chunk))  # Store completed chunk
+            current_chunk = [para]  # Start new chunk
+            current_length = len(para)
+        else:
+            current_chunk.append(para)
+            current_length += len(para)
+
+    if current_chunk:
+        chunks.append(" ".join(current_chunk))  # Store last chunk
+
+    print(f"🔍 Debug: Created {len(chunks)} chunks from text")  # Debug print
+    return chunks
 
 def process_pdf(pdf_path):
     """Extract and add PDF text chunks to FAISS."""
