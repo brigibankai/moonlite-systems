@@ -1,37 +1,41 @@
-This method fully runs locally using FAISS for vector search and sentence-transformers for text embeddings. No external API calls (e.g., OpenAI) are needed.
+# moonlite-systems: Retrieval-Augmented Generation Knowledgebase
 
-Key Components
-Text Embedding Model
+**moonlite-systems** is a lightweight, modular RAG (retrieval-augmented generation) system designed to answer questions using a custom knowledge base. It combines embedding-based document search with OpenAI’s generative models to return contextually grounded, accurate responses.
 
-Uses sentence-transformers (all-MiniLM-L6-v2) to convert text into vector embeddings.
-FAISS Vector Store
+Built as part of Moonlite’s broader mission to create tools for introspection, alignment, and clarity, this system reflects a hybrid mindset: design-forward, developer-aware, and focused on signal over noise.
 
-A flat L2 index (IndexFlatL2) is created to store and search for embeddings.
-This index enables fast similarity search.
-Core Functions
+---
 
-process_input(): Handles CLI input.
-embed_text(text): Converts text into an embedding.
-add_to_db(text): Converts text to an embedding and stores it in FAISS.
-search_db(query, top_k=3): Searches for the most similar stored embeddings in FAISS.
-How It Works
-User provides input text.
-Embedding is generated using sentence-transformers.
-Text embedding is stored in FAISS (add_to_db).
-User queries the system, and FAISS searches for the most similar stored text (search_db).
-Pros & Cons
-✅ Fully local (No API calls, No internet required).
-✅ Cost-free (No OpenAI API costs).
-✅ Fast (FAISS optimizes nearest neighbor search).
+## 🧠 What It Does
 
-⚠️ Embedding quality is lower compared to OpenAI’s models.
-⚠️ Limited to pre-trained transformer model (all-MiniLM-L6-v2).
-⚠️ No text generation (Unlike OpenAI’s completion models).
+- Accepts user questions as input  
+- Searches a local knowledge index for relevant context  
+- Uses OpenAI’s API to generate answers grounded in that context  
+- Returns clear, conversational responses  
 
-When to Use This?
-If you want full privacy and zero API costs.
-If you only need fast similarity search and not AI-generated responses.
-If you plan to scale locally without cloud dependencies.
+This system is optimized for **personal and project-based knowledge organization**, designed to scale with future decks, documents, and Moonlite's internal creative systems.
 
+---
 
-i am updating this project to use both local and openai embeddings
+## ⚙️ Stack & Tools
+
+- `LangChain` – orchestrates RAG pipeline  
+- `FAISS` – vector similarity search for fast document retrieval  
+- `OpenAI API` – GPT model for natural language responses  
+- `NumPy`, `dotenv`, and `tiktoken` – environment config, encoding, and support tooling  
+- Input documents: PDFs, MDs, plaintext (Moonlite format standard in development)
+
+---
+
+## 🧪 How It Works
+
+1. **Ingest & Chunk**: Parses PDFs or text files, splits into chunks for embedding  
+2. **Embed & Index**: Generates vector embeddings and stores them in a FAISS index  
+3. **Query**: User submits a question  
+4. **Retrieve**: Relevant chunks retrieved based on vector similarity  
+5. **Generate**: GPT model produces an answer based on retrieved context
+
+---
+
+## 📁 Folder Structure
+
